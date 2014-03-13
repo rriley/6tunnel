@@ -407,6 +407,7 @@ void usage(const char *arg0)
 "  -I  send specified password to the irc server\n"
 "  -l  bind to specified address\n"
 "  -L  limit simultanous connections\n"
+"  -T  make the listening socket TPROXY compatible\n"
 "  -p  write down pid to specified file\n"
 "  -s  connect using specified address\n"
 "  -m  read specified IPv4-to-IPv6 map file\n"
@@ -530,6 +531,7 @@ int main(int argc, char **argv)
 {
 	int force = 0, lsock, csock, one = 0, jeden = 1, local_port;
 	int detach = 1, sa_len, conn_limit = 0, optc;
+	int tproxy = 0;
 	char *username = NULL, *bind_host = NULL;
 	struct sockaddr *sa;
 	struct sockaddr_in laddr, caddr;
@@ -537,7 +539,7 @@ int main(int argc, char **argv)
 	unsigned int caddrlen = sizeof(caddr);
 	struct passwd *pw = NULL;
 	
-	while ((optc = getopt(argc, argv, "1dv46fHs:l:I:i:hu:m:L:A:p:")) != -1) {
+	while ((optc = getopt(argc, argv, "1dv46fHTs:l:I:i:hu:m:L:A:p:")) != -1) {
 		switch (optc) {
 			case '1':
 				one = 1;
@@ -547,6 +549,9 @@ int main(int argc, char **argv)
 				break;
 			case 'v':
 				verbose = 1;
+				break;
+			case 'T':
+				tproxy = 1;
 				break;
 			case '4':
 				break;
@@ -679,6 +684,16 @@ int main(int argc, char **argv)
 		perror("setsockopt");
 		exit(1);
 	}
+
+
+	if (tproxy) {
+		printf("TPROXY\n");
+		if (setsockopt(lsock, SOL_IP, IP_TRANSPARENT, &jeden, sizeof(jeden)) == -1) {
+			perror("setsockopt");
+			exit(1);
+		}
+	}
+
   
 	if (bind(lsock, sa, sa_len)) {
 		perror("bind");
